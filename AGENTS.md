@@ -58,6 +58,31 @@
 
 We use `uv` to manage Python dependencies.
 
+# Node.js / TypeScript Architecture
+
+The pnpm workspace has two main packages: `crates/tensorzero-node` and `ui/`.
+
+## `@tensorzero/tensorzero-node` — NAPI bridge
+
+A native Node.js addon (NAPI-RS) that compiles Rust into a `.node` binary callable from JavaScript. It exposes:
+- `PostgresClient` — API key CRUD (create, list, disable, update description)
+- `ConfigApplier` — applies edits to TOML config files (used by the Autopilot feature)
+
+The TypeScript wrapper lives in `crates/tensorzero-node/lib/index.ts` and adds type safety around the string-based bindings.
+
+## `ui/` — React Router 7 web app
+
+A full SSR React 19 app (Vite + Tailwind CSS 4) serving the observability, evaluation, dataset, Autopilot, and playground dashboards. On the server side it:
+- Imports `@tensorzero/tensorzero-node` directly for API key management and config file edits
+- Talks to the TensorZero gateway via HTTP for inferences and other operations
+- Queries ClickHouse directly for analytics/metrics
+
+Key env vars: `TENSORZERO_POSTGRES_URL`, `TENSORZERO_GATEWAY_URL`, `TENSORZERO_UI_CONFIG_FILE`.
+
+## `clients/openai-node/`
+
+Uses the official OpenAI Node SDK against TensorZero's OpenAI-compatible endpoint to verify API parity.
+
 # Type generation for TypeScript
 
 We use `ts-rs` and `n-api` for TypeScript-Rust interoperability.
