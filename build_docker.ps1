@@ -1,14 +1,11 @@
 #!/usr/bin/env pwsh
-# Builds and pushes TensorZero Docker images per RELEASE_GUIDE.md.
-# Usage: ./docker_build.ps1 -Version 2025.01.0 [-Target gateway,ui,evaluations]
+# Builds TensorZero Docker images locally.
+# Usage: ./build_docker.ps1 -Version 2025.01.0 [-Target gateway,ui,evaluations]
 param(
     [Parameter(Mandatory)]
     [string]$Version,
 
-    [string[]]$Target = @("gateway", "ui", "evaluations"),
-
-    # Pass --load instead of --push (local build, single platform only)
-    [switch]$LocalOnly
+    [string[]]$Target = @("gateway", "ui", "evaluations")
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,17 +53,10 @@ foreach ($t in $Target) {
         "-t", "${repo}:${Version}",
         "-f", $dockerfile,
         "--attest", "type=provenance,mode=max",
-        "--attest", "type=sbom"
+        "--attest", "type=sbom",
+        "--load",
+        "."
     )
-
-    if ($LocalOnly) {
-        $buildArgs += "--load"
-    } else {
-        $buildArgs += "--platform", "linux/amd64,linux/arm64"
-        $buildArgs += "--push"
-    }
-
-    $buildArgs += "."
 
     Push-Location $Root
     try {
@@ -76,7 +66,7 @@ foreach ($t in $Target) {
         Pop-Location
     }
 
-    Ok "${repo}:latest and ${repo}:$Version built"
+    Ok "${repo}:latest and ${repo}:$Version built locally"
 }
 
 Write-Host "`nDone." -ForegroundColor Green
